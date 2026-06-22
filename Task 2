@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Player</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #fff;
+            padding: 20px;
+        }
+        .player {
+            width: min(100%, 420px);
+            background: rgba(255, 255, 255, 0.08);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 20px;
+        }
+        .top,
+        .controls,
+        .row,
+        .info {
+            display: flex;
+            align-items: center;
+        }
+        .top,
+        .info {
+            justify-content: space-between;
+        }
+        .top,
+        .controls {
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .controls {
+            justify-content: center;
+            margin: 16px 0 10px;
+        }
+        .song {
+            font-size: 22px;
+            font-weight: 700;
+        }
+        .artist {
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+        button {
+            border: 0;
+            border-radius: 50px;
+            padding: 10px 14px;
+            background: #38bdf8;
+            color: #00111f;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        .info {
+            font-size: 12px;
+            opacity: 0.85;
+            margin-top: 6px;
+        }
+        .playlist {
+            margin-top: 16px;
+        }
+        .track {
+            padding: 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            margin-top: 8px;
+            cursor: pointer;
+        }
+        .track.active {
+            background: #38bdf8;
+            color: #00111f;
+        }
+        .small {
+            font-size: 13px;
+        }
+        .mt {
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="player">
+        <div class="top">
+            <h1>Music Player</h1>
+            <label class="small"><input id="autoPlay" type="checkbox" checked> Autoplay</label>
+        </div>
+        <div class="song" id="title">Song</div>
+        <div class="artist" id="artist">Artist</div>
+        <audio id="audio"></audio>
+        <div class="controls">
+            <button id="prev">Prev</button>
+            <button id="play">Play</button>
+            <button id="next">Next</button>
+        </div>
+        <input id="progress" type="range" value="0" min="0" max="100" aria-label="Song progress" title="Song progress">
+        <div class="info"><span id="current">0:00</span><span id="duration">0:00</span></div>
+        <div class="row mt">
+            <span class="small">Volume</span>
+            <input id="volume" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Volume" title="Volume">
+        </div>
+        <div class="playlist" id="playlist"></div>
+    </div>
+    <script>
+        const songs = [
+            {
+                title: 'Dreams',
+                artist: 'Bensound',
+                src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+            },
+            {
+                title: 'Sunny',
+                artist: 'Bensound',
+                src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
+            },
+            {
+                title: 'River',
+                artist: 'Bensound',
+                src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
+            }
+        ];
+        const audio = document.getElementById('audio');
+        const title = document.getElementById('title');
+        const artist = document.getElementById('artist');
+        const playBtn = document.getElementById('play');
+        const prevBtn = document.getElementById('prev');
+        const nextBtn = document.getElementById('next');
+        const progress = document.getElementById('progress');
+        const current = document.getElementById('current');
+        const duration = document.getElementById('duration');
+        const volume = document.getElementById('volume');
+        const playlist = document.getElementById('playlist');
+        const autoPlay = document.getElementById('autoPlay');
+        let index = 0;
+        let playing = false;
+
+        const time = s => (isNaN(s) ? '0:00' : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`);
+
+        const loadSong = i => {
+            index = (i + songs.length) % songs.length;
+            const song = songs[index];
+            audio.src = song.src;
+            title.textContent = song.title;
+            artist.textContent = song.artist;
+
+            document.querySelectorAll('.track').forEach((track, n) => {
+                track.classList.toggle('active', n === index);
+            });
+        };
+        const playSong = () => {
+            audio.play();
+            playing = true;
+            playBtn.textContent = 'Pause';
+        };
+        const pauseSong = () => {
+            audio.pause();
+            playing = false;
+            playBtn.textContent = 'Play';
+        };
+        const togglePlay = () => playing ? pauseSong() : playSong();
+        const nextSong = () => {
+            loadSong(index + 1);
+            if (playing) playSong();
+        };
+        const prevSong = () => {
+            loadSong(index - 1);
+            if (playing) playSong();
+        };
+        songs.forEach((song, i) => {
+            const track = document.createElement('div');
+            track.className = 'track';
+            track.textContent = `${song.title} - ${song.artist}`;
+            track.onclick = () => {
+                loadSong(i);
+                playSong();
+            };
+            playlist.appendChild(track);
+        });
+        loadSong(0);
+        audio.volume = volume.value;
+        playBtn.onclick = togglePlay;
+        nextBtn.onclick = nextSong;
+        prevBtn.onclick = prevSong;
+        audio.onloadedmetadata = () => {
+            duration.textContent = time(audio.duration);
+        };
+        audio.ontimeupdate = () => {
+            progress.value = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+            current.textContent = time(audio.currentTime);
+        };
+        progress.oninput = () => {
+            audio.currentTime = (progress.value / 100) * audio.duration;
+        };
+        volume.oninput = () => {
+            audio.volume = volume.value;
+        };
+        audio.onended = () => {
+            autoPlay.checked ? nextSong() : pauseSong();
+        };
+    </script>
+</body>
+</html>
